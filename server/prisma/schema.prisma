@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String         @id @default(uuid()) @map("userId")
+  password         String
+  firstName        String
+  lastName         String
+  email            String         @unique
+  institution      String?
+  gender           String
+  role             String
+  conferences      Conference[]   @relation("CreatedConferences")
+  papers           Paper[]        @relation("AuthoredPapers")
+  reviews          Review[]       @relation("UserReviews")
+  peers            Paper[]        @relation("PeerReviewers")
+}
+
+model Conference {
+  id               String    @id @default(uuid()) @map("conferenceId")
+  creator          User      @relation("CreatedConferences", fields: [createdBy], references: [id])
+  createdBy        String
+  papers           Paper[]   @relation("SubmittedPapers")
+}
+
+model Paper {
+  id                      String      @id @default(uuid()) @map("paperId")
+  author                  User        @relation("AuthoredPapers", fields: [authorId], references: [id])
+  authorId                String
+  submittedConference     Conference  @relation("SubmittedPapers", fields: [submittedConferenceId], references: [id])
+  submittedConferenceId   String
+  reviews                 Review[]    @relation("paperReviewed")
+  peers                   User[]      @relation("PeerReviewers")
+}
+
+model Review {
+  id                String        @id @default(uuid()) @map("reviewId")
+  reviewer          User          @relation("UserReviews", fields: [reviewerId], references: [id])
+  reviewerId        String
+  originalPaperId   String
+  originalPaper     Paper         @relation("paperReviewed", fields: [originalPaperId], references: [id])
+  rating            Int           @default(1)
+}
